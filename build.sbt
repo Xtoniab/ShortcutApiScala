@@ -28,3 +28,5 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
   "org.http4s" %% "http4s-blaze-client" % http4sBlazeClientVersion % Test
 )
+
+fork / run := true
