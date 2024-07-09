@@ -10,7 +10,7 @@ object Main extends IOApp {
     for {
       shortcutsController <- Resource.pure(new ShortcutsController(shortcutService))
       server <- BlazeServerBuilder[IO]
-        .bindHttp(5001, "0.0.0.0")
+        .bindHttp(8080, "0.0.0.0")
         .withHttpApp(Routes(shortcutsController).orNotFound)
         .resource
     } yield ()

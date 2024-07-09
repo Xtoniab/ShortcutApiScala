@@ -5,8 +5,6 @@ WORKDIR /app
 COPY build.sbt /app/
 COPY project /app/project
 
-RUN sbt update
-
 COPY . /app
 
 RUN sbt compile
