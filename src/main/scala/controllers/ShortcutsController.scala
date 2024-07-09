@@ -12,13 +12,18 @@ import encoders.Encoders._
 class ShortcutsController(shortcutService: ShortcutService) {
 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case req @ POST -> Root / "add" =>
+    case req@POST -> Root / "add" =>
       req.as[ShortcutDto].flatMap { shortcutDto =>
         shortcutDto.toModel match {
           case Right(shortcut) =>
             shortcutService.addShortcut(shortcut).flatMap {
-              case Right(_) => Ok(Map("success" -> true).asJson)
-              case Left(error) => BadRequest(Map("success" -> false, "error" -> error).asJson)
+              case Right(_) => Ok(Map(
+                "success" -> true).asJson
+              )
+              case Left(error) => BadRequest(Map(
+                "success" -> false,
+                "error" -> error).asJson
+              )
             }
           case Left(error) =>
             BadRequest(Map("success" -> false, "error" -> error).asJson)
@@ -28,7 +33,10 @@ class ShortcutsController(shortcutService: ShortcutService) {
     case GET -> Root / "category" / categoryName =>
       shortcutService.getShortcutsByCategory(categoryName).flatMap { shortcuts =>
         val result = shortcuts.map { s =>
-          Map("actionName" -> s.path.action, "binding" -> s.binding.toString)
+          Map(
+            "actionName" -> s.path.action,
+            "binding" -> s.binding.toString
+          )
         }
         Ok(result.asJson)
       }

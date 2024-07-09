@@ -11,7 +11,8 @@ class ShortcutRegexTests extends AnyFunSuite with Matchers {
       "Ctrl+Alt+S",
       "Alt+Shift+T",
       "Ctrl+Shift+X",
-      "Ctrl+Alt+Shift+P")
+      "Ctrl+Alt+Shift+P"
+    )
 
     validCases.foreach { binding =>
       withClue(s"Testing binding pattern: $binding") {
@@ -25,7 +26,8 @@ class ShortcutRegexTests extends AnyFunSuite with Matchers {
       "Ctrl++A",
       "T",
       "Ctrl+Shift+1",
-      "Ctrl+Shift+FS")
+      "Ctrl+Shift+FS"
+    )
 
     invalidCases.foreach { binding =>
       withClue(s"Testing binding pattern: $binding") {
@@ -37,7 +39,8 @@ class ShortcutRegexTests extends AnyFunSuite with Matchers {
   test("ActionPattern should match valid patterns") {
     val validCases = List(
       "file.save",
-      "edit.cut")
+      "edit.cut"
+    )
 
     validCases.foreach { action =>
       withClue(s"Testing action pattern: $action") {
@@ -49,7 +52,8 @@ class ShortcutRegexTests extends AnyFunSuite with Matchers {
   test("ActionPattern should not match invalid patterns") {
     val invalidCases = List(
       "file.saveAs",
-      "file-")
+      "file-"
+    )
 
     invalidCases.foreach { action =>
       withClue(s"Testing action pattern: $action") {
