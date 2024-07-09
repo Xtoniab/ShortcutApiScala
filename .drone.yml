@@ -1,0 +1,28 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: build
+    image: sbtscala/scala-sbt:latest
+    commands:
+      - sbt clean compile
+
+  - name: test
+    image: sbtscala/scala-sbt:latest
+    commands:
+      - sbt test
+
+  - name: publish
+    image: plugins/docker
+    settings:
+      repo: xtoniabnew/shortcut-api-scala
+      tags: latest
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+
+trigger:
+  branch:
+    - master
