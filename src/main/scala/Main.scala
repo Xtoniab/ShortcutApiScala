@@ -16,7 +16,9 @@ object Main extends IOApp {
     } yield ()
 
   def run(args: List[String]): IO[ExitCode] = {
-    val shortcutService = new ShortcutServiceImpl
-    createServer(shortcutService).use(_ => IO.never).as(ExitCode.Success)
+    for {
+      shortcutService <- ShortcutServiceImpl.create
+      _ <- createServer(shortcutService).use(_ => IO.never)
+    } yield ExitCode.Success
   }
 }

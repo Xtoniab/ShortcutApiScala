@@ -6,18 +6,11 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import services.ShortcutServiceImpl
-
-import scala.compiletime.uninitialized
 
 class ShortcutServiceTests extends AnyFunSuite with Matchers with TableDrivenPropertyChecks with BeforeAndAfter {
 
-  private var service: ShortcutServiceImpl = uninitialized
-
-  before {
-    service = new ShortcutServiceImpl
-  }
-
+  private var service: ShortcutServiceImpl = ShortcutServiceImpl.create.unsafeRunSync()
+  
   test("AddShortcut should return expected result") {
     val testCases = Table(
       ("binding", "description", "path", "expected"),

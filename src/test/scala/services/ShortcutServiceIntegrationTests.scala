@@ -1,35 +1,27 @@
 package services
 
-import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
-import controllers.ShortcutsController
+import controllers.{PostAddResponse, GetCategoryResponseEntry, ShortcutsController}
 import dtos.ShortcutDto
-import io.circe.generic.auto.*
-import org.http4s.*
-import org.http4s.Method.*
+import org.http4s.circe._
+import org.http4s.circe.CirceEntityCodec._
+import org.http4s._
+import org.http4s.Method._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.blaze.server.BlazeServerBuilder
-import org.http4s.circe.*
-import org.http4s.circe.CirceEntityCodec.*
-import org.http4s.client.*
-import org.http4s.client.dsl.io.*
-import org.http4s.implicits.*
+import org.http4s.client._
+import org.http4s.client.dsl.io._
+import org.http4s.implicits._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-
-import scala.concurrent.ExecutionContext
-
-case class AddResponse(success: Boolean, error: Option[String])
-case class GetResponseEntry(actionName: String, binding: String)
+import cats.effect.unsafe.implicits.global
 
 class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with BeforeAndAfterAll {
-
-  implicit val ec: ExecutionContext = ExecutionContext.global
-
-  val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].withExecutionContext(ec).resource
-  val shortcutService = new ShortcutServiceImpl()
-  val baseUrl = "http://localhost:5000"
+  
+  private val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].resource
+  private val shortcutService = ShortcutServiceImpl.create.unsafeRunSync()
+  private val baseUrl = "http://localhost:5000"
 
   private def createServer(shortcutService: ShortcutService): Resource[IO, Unit] =
     for {
@@ -44,7 +36,7 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
     createServer(shortcutService).use(_ => IO.never).start.unsafeRunSync()
   }
 
-  def withClient(testCode: Client[IO] => Any): Unit = {
+  private def withClient(testCode: Client[IO] => Any): Unit = {
     clientResource.use { client =>
       IO(testCode(client))
     }.unsafeRunSync()
@@ -61,7 +53,7 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
       testCases.foreach { case (binding, description, action) =>
         val shortcutDto = ShortcutDto(binding, description, action)
         val req = POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
-        val res = client.expect[AddResponse](req).unsafeRunSync()
+        val res = client.expect[PostAddResponse](req).unsafeRunSync()
 
         res.success shouldBe true
       }
@@ -102,24 +94,23 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
           action = s"$category.$action"
         )
 
-        client.expect[AddResponse](
+        client.expect[PostAddResponse](
           POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
         ).unsafeRunSync()
 
-        val response = client.expect[List[GetResponseEntry]](
+        val response = client.expect[List[GetCategoryResponseEntry]](
           GET(Uri.unsafeFromString(s"$baseUrl/category/$category"))
         ).unsafeRunSync()
 
-        response should contain(GetResponseEntry(action, binding))
+        response should contain(GetCategoryResponseEntry(action, binding))
       }
     }
   }
 
-
   test("GetShortcutsByCategory should return empty when category does not exist") {
     shortcutService.clearShortcuts().unsafeRunSync()
     withClient { client =>
-      val res = client.expect[List[GetResponseEntry]](
+      val res = client.expect[List[GetCategoryResponseEntry]](
         GET(
           Uri.unsafeFromString(s"$baseUrl/category/nonexistent")
         )).unsafeRunSync()
@@ -137,14 +128,14 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
         action = "browser.newtab"
       )
 
-      client.expect[AddResponse](
+      client.expect[PostAddResponse](
         POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
       ).unsafeRunSync()
 
       val addRequest = POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
 
       val result = client.fetch(addRequest) {
-        case Status.BadRequest(response) => response.as[AddResponse]
+        case Status.BadRequest(response) => response.as[PostAddResponse]
         case _ => IO.raiseError(new Exception("Unexpected status"))
       }.unsafeRunSync()
 
@@ -163,16 +154,16 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
 
       testCases.foreach { case (binding, description, action) =>
         val shortcutDto = ShortcutDto(binding, description, action)
-        client.expect[AddResponse](POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))).unsafeRunSync()
+        client.expect[PostAddResponse](POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))).unsafeRunSync()
 
         val category = action.split('.')(0)
         val actionName = action.split('.')(1)
 
-        val res = client.expect[List[GetResponseEntry]](
+        val res = client.expect[List[GetCategoryResponseEntry]](
           GET(Uri.unsafeFromString(s"$baseUrl/category/$category"))
         ).unsafeRunSync()
 
-        res should contain(GetResponseEntry(actionName, binding))
+        res should contain(GetCategoryResponseEntry(actionName, binding))
       }
     }
   }

@@ -27,7 +27,7 @@ case class ShortcutBinding(modifierKeys: List[SystemKey], key: Char) {
 
 object ShortcutBinding {
   def apply(binding: String): Validated[String, ShortcutBinding] = {
-    if (!ShortcutRegex.BindingRegex.matches(binding)) {
+    if !ShortcutRegex.BindingRegex.matches(binding) then {
       Invalid("Invalid binding format.")
     } else {
       val keys: List[String] = binding.split('+').map(_.trim).toList
