@@ -13,6 +13,18 @@ steps:
     commands:
       - sbt test
 
+trigger:
+  event:
+    - push
+    - pull_request
+
+
+---
+kind: pipeline
+type: docker
+name: deploy
+
+steps:
   - name: publish
     image: plugins/docker
     settings:
@@ -24,6 +36,22 @@ steps:
       password:
         from_secret: docker_password
 
+  - name: deploy
+    image: appleboy/ssh-action
+    settings:
+      host:
+        from_secret: ssh_ip
+      username:
+        from_secret: ssh_username
+      password:
+        from_secret: ssh_password
+      script_stop: true
+      script: |
+        docker-compose pull scala-app
+        docker-compose up -d scala-app
+
 trigger:
-  branch:
-    - master
+  event:
+    - promote
+  target:
+    - production
