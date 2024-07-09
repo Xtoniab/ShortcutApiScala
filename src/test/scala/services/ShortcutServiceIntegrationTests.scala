@@ -29,13 +29,13 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
 
   val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].withExecutionContext(ec).resource
   val shortcutService = new ShortcutServiceImpl()
-  val host = "http://localhost"
+  val baseUrl = "http://localhost:5000"
 
   private def createServer(shortcutService: ShortcutService): Resource[IO, Unit] =
     for {
       shortcutsController <- Resource.pure(new ShortcutsController(shortcutService))
       server <- BlazeServerBuilder[IO]
-        .bindHttp(80, "0.0.0.0")
+        .bindHttp(5000, "localhost")
         .withHttpApp(shortcutsController.routes.orNotFound)
         .resource
     } yield ()
@@ -60,7 +60,7 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
 
       testCases.foreach { case (binding, description, action) =>
         val shortcutDto = ShortcutDto(binding, description, action)
-        val req = POST(shortcutDto, Uri.unsafeFromString("/add"))
+        val req = POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
         val res = client.expect[AddResponse](req).unsafeRunSync()
 
         res.success shouldBe true
@@ -78,7 +78,7 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
 
       testCases.foreach { case (binding, description, action) =>
         val shortcutDto = ShortcutDto(binding, description, action)
-        val req = POST(shortcutDto, Uri.unsafeFromString("/add"))
+        val req = POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
         val res = client.status(req).unsafeRunSync()
 
         res shouldBe Status.BadRequest
@@ -103,11 +103,11 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
         )
 
         client.expect[AddResponse](
-          POST(shortcutDto, Uri.unsafeFromString("/add"))
+          POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
         ).unsafeRunSync()
 
         val response = client.expect[List[GetResponseEntry]](
-          GET(Uri.unsafeFromString(s"$host./category/$category"))
+          GET(Uri.unsafeFromString(s"$baseUrl/category/$category"))
         ).unsafeRunSync()
 
         response should contain(GetResponseEntry(action, binding))
@@ -121,7 +121,7 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
     withClient { client =>
       val res = client.expect[List[GetResponseEntry]](
         GET(
-          Uri.unsafeFromString(s"$host/category/nonexistent")
+          Uri.unsafeFromString(s"$baseUrl/category/nonexistent")
         )).unsafeRunSync()
       res shouldBe empty
     }
@@ -138,10 +138,10 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
       )
 
       client.expect[AddResponse](
-        POST(shortcutDto, Uri.unsafeFromString("/add"))
+        POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
       ).unsafeRunSync()
 
-      val addRequest = POST(shortcutDto, Uri.unsafeFromString("http://localhost/add"))
+      val addRequest = POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))
 
       val result = client.fetch(addRequest) {
         case Status.BadRequest(response) => response.as[AddResponse]
@@ -163,13 +163,13 @@ class ShortcutServiceIntegrationTests extends AnyFunSuite with Matchers with Bef
 
       testCases.foreach { case (binding, description, action) =>
         val shortcutDto = ShortcutDto(binding, description, action)
-        client.expect[AddResponse](POST(shortcutDto, Uri.unsafeFromString("/add"))).unsafeRunSync()
+        client.expect[AddResponse](POST(shortcutDto, Uri.unsafeFromString(s"$baseUrl/add"))).unsafeRunSync()
 
         val category = action.split('.')(0)
         val actionName = action.split('.')(1)
 
         val res = client.expect[List[GetResponseEntry]](
-          GET(Uri.unsafeFromString(s"$host/category/$category"))
+          GET(Uri.unsafeFromString(s"$baseUrl/category/$category"))
         ).unsafeRunSync()
 
         res should contain(GetResponseEntry(actionName, binding))
