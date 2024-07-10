@@ -3,6 +3,7 @@ import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.implicits._
 import controllers.ShortcutsController
 import services.{ShortcutService, ShortcutServiceImpl}
+import middleware.Middleware
 
 object Main extends IOApp {
 
@@ -10,8 +11,8 @@ object Main extends IOApp {
     for {
       shortcutsController <- Resource.pure(new ShortcutsController(shortcutService))
       server <- BlazeServerBuilder[IO]
-        .bindHttp(8080, "0.0.0.0")
-        .withHttpApp(Routes(shortcutsController).orNotFound)
+        .bindHttp(8080, "scala-app")
+        .withHttpApp(Middleware.stripPrefix(Routes(shortcutsController)).orNotFound)
         .resource
     } yield ()
 
